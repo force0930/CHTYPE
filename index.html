@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>韻律打字 - 繁體中文打字練習</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts: Noto Sans TC 思源黑體 & JetBrains Mono 等寬數字 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- 設定 Tailwind 深色模式與字體 -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', '"Microsoft JhengHei"', 'sans-serif'],
+                        mono: ['"JetBrains Mono"', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 自訂捲軸與動畫細節 */
+        body {
+            font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        /* 隱藏原生捲軸但保留捲動功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* 閃爍游標動畫 */
+        @keyframes pulse-caret {
+            0%, 100% { border-color: #0d9488; }
+            50% { border-color: transparent; }
+        }
+        .dark @keyframes pulse-caret {
+            0%, 100% { border-color: #2dd4bf; }
+            50% { border-color: transparent; }
+        }
+        .caret-active {
+            animation: pulse-caret 1s infinite;
+        }
+
+        /* 錯誤字元輕微震動回饋 */
+        @keyframes shake-tiny {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+        .char-error-anim {
+            animation: shake-tiny 0.2s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen flex flex-col selection:bg-teal-500/20">
+
+    <!-- 頂部導覽列 -->
+    <header class="w-full max-w-5xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-teal-600 dark:bg-teal-500 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                鍵
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-wide text-slate-900 dark:text-white leading-tight">韻律打字</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">繁體中文速度與精準度訓練</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-3">
+            <!-- 歷史紀錄按鈕 -->
+            <button id="btn-history" class="px-3 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800 transition flex items-center gap-1.5" title="查看練習紀錄">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                <span class="hidden sm:inline">歷史紀錄</span>
+            </button>
+
+            <!-- 音效切換按鈕 (Web Audio API 輕微按鍵聲) -->
+            <button id="btn-sound" class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800 transition" title="切換按鍵音效">
+                <svg id="icon-sound-on" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path></svg>
+                <svg id="icon-sound-off" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"></path></svg>
+            </button>
+
+            <!-- 深色/淺色模式切換按鈕 -->
+            <button id="btn-theme" class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-800 transition" title="切換深色/淺色主題">
+                <svg id="icon-sun" class="w-5 h-5 hidden dark:block text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <svg id="icon-moon" class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主要內容區 -->
+    <main class="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-5">
+
+        <!-- 控制設定列：分類、文章選擇、時間模式 -->
+        <section class="bg-white dark:bg-slate-800/80 rounded-2xl p-3 sm:p-4 shadow-sm border border-slate-200/80 dark:border-slate-700/80 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            
+            <!-- 左側：主題分類與文章選擇 -->
+            <div class="flex flex-wrap items-center gap-2">
+                <div class="flex bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl overflow-x-auto max-w-full no-scrollbar" id="category-tabs">
+                    <button data-cat="daily" class="cat-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition bg-white dark:bg-slate-700 text-teal-600 dark:text-teal-400 shadow-sm">日常短句</button>
+                    <button data-cat="prose" class="cat-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">散文佳句</button>
+                    <button data-cat="news" class="cat-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">新聞報導</button>
+                    <button data-cat="classic" class="cat-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">古詩成語</button>
+                    <button data-cat="tech" class="cat-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">科技商業</button>
+                    <button data-cat="custom" class="cat-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">自訂文章</button>
+                </div>
+
+                <!-- 篇目下拉選單 -->
+                <select id="article-select" class="bg-slate-100 dark:bg-slate-900/80 border-0 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-teal-500 outline-none cursor-pointer">
+                    <!-- 由 JS 動態填充 -->
+                </select>
+            </div>
+
+            <!-- 右側：時間模式選擇 -->
+            <div class="flex items-center justify-between sm:justify-end gap-2 border-t lg:border-t-0 pt-2 lg:pt-0 border-slate-100 dark:border-slate-700/50">
+                <span class="text-xs text-slate-400 font-medium hidden sm:inline">時間模式：</span>
+                <div class="flex bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl" id="time-modes">
+                    <button data-time="0" class="time-btn px-2.5 py-1 rounded-lg text-xs font-medium transition bg-white dark:bg-slate-700 text-teal-600 dark:text-teal-400 shadow-sm">不限時</button>
+                    <button data-time="30" class="time-btn px-2.5 py-1 rounded-lg text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">30秒</button>
+                    <button data-time="60" class="time-btn px-2.5 py-1 rounded-lg text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">60秒</button>
+                    <button data-time="120" class="time-btn px-2.5 py-1 rounded-lg text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">120秒</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 即時數據儀表板 -->
+        <section class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <!-- CPM 每分鐘字數 -->
+            <div class="bg-white dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
+                    <span>每分鐘字數 (CPM)</span>
+                    <span class="px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-900/40 text-teal-600 dark:text-teal-400 text-[10px]">速度</span>
+                </div>
+                <div class="mt-2 flex items-baseline gap-1.5">
+                    <span id="stat-cpm" class="font-mono text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">0</span>
+                    <span class="text-xs text-slate-400">字/分</span>
+                </div>
+            </div>
+
+            <!-- 正確率 Accuracy -->
+            <div class="bg-white dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
+                    <span>輸入正確率</span>
+                    <span class="px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 text-[10px]">精準</span>
+                </div>
+                <div class="mt-2 flex items-baseline gap-1">
+                    <span id="stat-accuracy" class="font-mono text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">100</span>
+                    <span class="text-sm font-mono font-bold text-slate-400">%</span>
+                </div>
+            </div>
+
+            <!-- 計時器 -->
+            <div class="bg-white dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
+                    <span id="timer-label">經過時間</span>
+                    <span class="px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 text-[10px]">計時</span>
+                </div>
+                <div class="mt-2 flex items-baseline gap-1">
+                    <span id="stat-time" class="font-mono text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">00:00</span>
+                </div>
+            </div>
+
+            <!-- 完成進度 -->
+            <div class="bg-white dark:bg-slate-800/80 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col justify-between">
+                <div class="flex items-center justify-between text-slate-500 dark:text-slate-400 text-xs font-medium">
+                    <span>文章進度</span>
+                    <span id="stat-char-count" class="font-mono text-[11px] text-slate-400">0 / 0</span>
+                </div>
+                <div class="mt-2">
+                    <div class="flex items-baseline justify-between mb-1.5">
+                        <span id="stat-progress" class="font-mono text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">0%</span>
+                    </div>
+                    <div class="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div id="progress-bar" class="h-full bg-teal-500 rounded-full transition-all duration-150" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 打字練習核心視窗 -->
+        <section class="relative bg-white dark:bg-slate-800/90 rounded-2xl border-2 border-slate-200 dark:border-slate-700 focus-within:border-teal-500 dark:focus-within:border-teal-400 shadow-sm transition-colors flex-1 flex flex-col min-h-[280px] sm:min-h-[320px]">
+            
+            <!-- 狀態提示條 -->
+            <div class="px-5 py-2.5 border-b border-slate-100 dark:border-slate-700/60 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <div class="flex items-center gap-2">
+                    <span id="status-dot" class="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                    <span id="status-text">點擊下方文字區並開始輸入任何字元以啟動計時</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="ime-badge" class="hidden px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 font-medium">組字中...</span>
+                    <button id="btn-restart" class="text-teal-600 dark:text-teal-400 hover:underline font-medium flex items-center gap-1" title="重新開始 (或按 Esc 鍵)">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        重新開始
+                    </button>
+                </div>
+            </div>
+
+            <!-- 文本顯示區 (點擊此區域會自動聚焦到隱藏的輸入框) -->
+            <div id="text-container-wrapper" class="relative flex-1 p-6 sm:p-8 cursor-text overflow-hidden flex flex-col justify-center">
+                <!-- 失焦遮罩提示 -->
+                <div id="blur-overlay" class="hidden absolute inset-0 bg-white/75 dark:bg-slate-900/75 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center rounded-b-2xl transition-opacity">
+                    <div class="px-5 py-3 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-medium text-sm shadow-lg flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"></path></svg>
+                        點擊此處繼續打字練習
+                    </div>
+                </div>
+
+                <!-- 可捲動的逐字渲染視窗 -->
+                <div id="text-display" class="h-[190px] sm:h-[210px] overflow-y-auto no-scrollbar text-[23px] sm:text-[26px] leading-[2.1] tracking-wider select-none relative scroll-smooth">
+                    <!-- 逐字 span 由 JS 生成 -->
+                </div>
+
+                <!-- 隱藏但保持可接收 IME 輸入法的 textarea -->
+                <textarea id="typing-input" 
+                    class="opacity-0 absolute top-6 left-6 w-1 h-1 pointer-events-none resize-none" 
+                    autocomplete="off" 
+                    autocorrect="off" 
+                    autocapitalize="off" 
+                    spellcheck="false"
+                    aria-label="打字輸入區"></textarea>
+            </div>
+
+            <!-- 底部即時輸入法預覽列 (顯示當前組字狀態，幫助確認輸入法反應) -->
+            <div class="px-5 py-2.5 bg-slate-50/80 dark:bg-slate-900/40 border-t border-slate-100 dark:border-slate-700/60 rounded-b-2xl flex items-center justify-between text-xs text-slate-400">
+                <div class="flex items-center gap-2 truncate">
+                    <span>輸入緩衝區：</span>
+                    <span id="composition-preview" class="font-medium text-teal-600 dark:text-teal-400 min-h-[1rem]">（就緒）</span>
+                </div>
+                <div class="hidden sm:flex items-center gap-3">
+                    <span>支援注音 / 倉頡 / 速成 / 拼音</span>
+                    <span>•</span>
+                    <span>按 <kbd class="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[10px] font-mono">Esc</kbd> 快速重來</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 自訂文章 Modal -->
+    <div id="modal-custom" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform transition-all">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white">自訂練習文章</h3>
+                <button id="close-custom-modal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">請貼上或輸入您想要練習的繁體中文段落（系統會自動去除多餘換行與首尾空白）：</p>
+            <textarea id="custom-text-input" rows="6" class="w-full rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3.5 text-sm text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-teal-500 outline-none resize-none" placeholder="例如：今天天氣真好，適合出門散步並練習中文打字..."></textarea>
+            <div id="custom-error-msg" class="hidden text-xs text-rose-500 mt-1.5">請至少輸入 5 個中文字或標點符號。</div>
+            <div class="mt-5 flex justify-end gap-2.5">
+                <button id="cancel-custom-btn" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition">取消</button>
+                <button id="confirm-custom-btn" class="px-5 py-2 rounded-xl text-sm font-medium bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition">開始練習</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 結算報告 Modal -->
+    <div id="modal-result" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-700 text-center relative overflow-hidden">
+            <!-- 頂部裝飾光暈 -->
+            <div class="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-teal-400 via-emerald-500 to-teal-600"></div>
+            
+            <div class="w-14 h-14 rounded-2xl bg-teal-50 dark:bg-teal-900/50 text-teal-600 dark:text-teal-400 flex items-center justify-center mx-auto mb-3">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-900 dark:text-white">練習完成！</h2>
+            <p id="result-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-1">表現非常出色，繼續保持這份節奏！</p>
+
+            <!-- 核心數據大卡片 -->
+            <div class="grid grid-cols-2 gap-3 my-6">
+                <div class="bg-slate-50 dark:bg-slate-900/80 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/80">
+                    <div class="text-xs text-slate-500 dark:text-slate-400">最終速度</div>
+                    <div class="font-mono text-3xl font-bold text-teal-600 dark:text-teal-400 mt-1"><span id="res-cpm">0</span> <span class="text-xs font-sans font-normal text-slate-400">字/分</span></div>
+                </div>
+                <div class="bg-slate-50 dark:bg-slate-900/80 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/80">
+                    <div class="text-xs text-slate-500 dark:text-slate-400">正確率</div>
+                    <div class="font-mono text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1"><span id="res-acc">100</span><span class="text-lg">%</span></div>
+                </div>
+            </div>
+
+            <!-- 次要細節數據 -->
+            <div class="bg-slate-50/70 dark:bg-slate-900/40 rounded-2xl p-3.5 mb-6 grid grid-cols-3 divide-x divide-slate-200 dark:divide-slate-700 text-xs">
+                <div>
+                    <div class="text-slate-400">總輸入字數</div>
+                    <div id="res-total" class="font-mono font-bold text-sm text-slate-700 dark:text-slate-200 mt-0.5">0</div>
+                </div>
+                <div>
+                    <div class="text-slate-400">錯誤字數</div>
+                    <div id="res-errors" class="font-mono font-bold text-sm text-rose-500 mt-0.5">0</div>
+                </div>
+                <div>
+                    <div class="text-slate-400">總耗時</div>
+                    <div id="res-time" class="font-mono font-bold text-sm text-slate-700 dark:text-slate-200 mt-0.5">0秒</div>
+                </div>
+            </div>
+
+            <!-- 操作按鈕 -->
+            <div class="flex gap-3">
+                <button id="btn-res-retry" class="flex-1 py-3 px-4 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition">
+                    再練一次
+                </button>
+                <button id="btn-res-next" class="flex-1 py-3 px-4 rounded-xl text-sm font-medium bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-500/20 transition">
+                    練習下一篇
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 歷史紀錄 Modal -->
+    <div id="modal-history" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col max-h-[85vh]">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">歷史練習紀錄</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">紀錄儲存在您的瀏覽器本機中（最多保留最近 20 筆）</p>
+                </div>
+                <button id="close-history-modal" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- 紀錄列表容器 -->
+            <div id="history-list" class="flex-1 overflow-y-auto py-4 space-y-2.5 no-scrollbar">
+                <!-- 由 JS 動態填充 -->
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <button id="btn-clear-history" class="text-xs text-rose-500 hover:text-rose-600 font-medium">清除所有紀錄</button>
+                <button id="btn-close-history-bottom" class="px-5 py-2 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600 transition">關閉</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * 繁體中文內建文章資料庫
+         * 包含五大主題分類，每類多篇精選繁體中文文本
+         */
+        const ARTICLE_DB = {
+            daily: [
+                {
+                    title: "晨間咖啡與閱讀時光",
+                    text: "清晨的陽光透過窗簾灑在書桌上，我泡了一杯熱騰騰的手沖咖啡，翻開昨晚還沒讀完的小說。微風輕輕吹過，帶來陣陣花草的清香，新的一天就在這樣寧靜而美好的氛圍中展開了。"
+                },
+                {
+                    title: "週末市集漫步",
+                    text: "週末午後，我喜歡到住家附近的文創市集散步。街道兩旁擺滿了手作飾品、陶藝杯盤與香氣四溢的烘焙點心。與攤主聊著創作背後的故事，總能為平凡的生活增添許多溫暖與靈感。"
+                },
+                {
+                    title: "養成運動的好習慣",
+                    text: "規律的運動不僅能增強體力，更是釋放工作壓力的最佳方式。每天下班後慢跑三十分鐘，感受汗水滑落與心跳加速的節奏，回到家洗個熱水澡，晚上的睡眠品質也會變得格外安穩。"
+                }
+            ],
+            prose: [
+                {
+                    title: "朱自清《匆匆》節選",
+                    text: "燕子去了，有再來的時候；楊柳枯了，有再青的時候；桃花謝了，有再開的時候。但是，聰明的，你告訴我，我們的日子為什麼一去不復返呢？是有人偷了他們罷：那是誰？又藏在何處呢？"
+                },
+                {
+                    title: "徐志摩《再別康橋》散文意象",
+                    text: "輕輕的我走了，正如我輕輕的來；我輕輕的招手，作別西天的雲彩。那河畔的金柳，是夕陽中的新娘；波光裡的豔影，在我的心頭蕩漾。軟泥上的青荇，油油的在水底招搖。"
+                },
+                {
+                    title: "林清玄《生活的美學》",
+                    text: "真正的生活品質，是回到自我，清楚衡量自己的能力與條件，在這有限的條件下追求最好的事物與生活。心美一切皆美，情深萬象皆深，我們在平凡的日子裡也能看見微光。"
+                }
+            ],
+            news: [
+                {
+                    title: "再生能源與智慧電網發展",
+                    text: "隨著全球淨零碳排趨勢加速，各地積極推動太陽能與離岸風電建設。專家指出，除了提升綠電發電佔比外，建置高效率的儲能系統與智慧電網，更是確保供電穩定與能源轉型成功的關鍵。"
+                },
+                {
+                    title: "台灣半導體產業鏈持續創新",
+                    text: "受惠於高效能運算與人工智慧晶片需求強勁，台灣半導體供應鏈展現高度韌性。從先進製程晶圓代工到精密封裝測試，上下游廠商持續加大研發投入，鞏固在全球科技版圖中的核心地位。"
+                },
+                {
+                    title: "都市綠化與永續建築趨勢",
+                    text: "現代都市規劃越來越重視生態平衡與居住舒適度。許多新建案導入垂直綠化與雨水回收系統，不僅有效降低都市熱島效應，也為市民創造出更多兼具美感與環保功能的休憩空間。"
+                }
+            ],
+            classic: [
+                {
+                    title: "經典四字成語精選",
+                    text: "循序漸進、持之以恆、水滴石穿、集思廣益、精益求精、豁然開朗、飲水思源、實事求是、高瞻遠矚、溫故知新、心曠神怡、海闊天空、一帆風順、萬象更新、胸有成竹、厚積薄發。"
+                },
+                {
+                    title: "蘇軾《定風波》",
+                    text: "莫聽穿林打葉聲，何妨吟嘯且徐行。竹杖芒鞋輕勝馬，誰怕？一簑煙雨任平生。料峭春風吹酒醒，微冷，山頭斜照卻相迎。回首向來蕭瑟處，歸去，也無風雨也無晴。"
+                },
+                {
+                    title: "王羲之《蘭亭集序》節選",
+                    text: "永和九年，歲在癸丑，暮春之初，會於會稽山陰之蘭亭，修禊事也。群賢畢至，少長鹹集。此地有崇山峻嶺，茂林修竹，又有清流激湍，映帶左右，引以為流觴曲水，列坐其次。"
+                }
+            ],
+            tech: [
+                {
+                    title: "生成式人工智慧的應用革命",
+                    text: "生成式人工智慧正在重塑軟體開發、內容創作與客戶服務的工作流程。企業透過導入大型語言模型，能夠自動化處理繁瑣的文書分析，讓團隊成員將寶貴的時間專注於策略規劃與創新思考。"
+                },
+                {
+                    title: "遠距協作與數位轉型策略",
+                    text: "雲端工具與即時通訊平台的成熟，打破了傳統辦公室的空間限制。成功的數位轉型不僅在於採購新穎的軟體系統，更在於建立透明高效的溝通文化與數據驅動的決策機制。"
+                },
+                {
+                    title: "資訊安全與個人隱私保護",
+                    text: "在萬物聯網與大數據時代，資訊安全已成為企業營運的生命線。落實多重要素驗證、定期進行系統漏洞掃描，並提升員工的資安意識，才能有效防範網路釣魚與勒索軟體的威脅。"
+                }
+            ]
+        };
+
+        /**
+         * 應用程式核心狀態管理
+         */
+        const state = {
+            category: 'daily',
+            articleIndex: 0,
+            customText: '這是一段自訂的練習文字，你可以隨時點擊上方按鈕修改成任何你想練習的文章段落。',
+            targetText: '',          // 當前目標練習全文
+            typedText: '',           // 使用者已確認輸入的字串
+            isComposing: false,      // 是否正在使用中文輸入法組字中 (關鍵！)
+            status: 'idle',          // 'idle' | 'running' | 'finished'
+            timeLimit: 0,            // 0 = 不限時, 30, 60, 120 (秒)
+            startTime: null,         // 開始時間戳記 (ms)
+            elapsedSeconds: 0,       // 已過秒數
+            timerInterval: null,     // 計時器 ID
+            soundEnabled: false,     // 按鍵音效開關
+            audioCtx: null           // Web Audio API Context
+        };
+
+        /**
+         * DOM 元素快取
+         */
+        const els = {
+            categoryTabs: document.querySelectorAll('.cat-btn'),
+            articleSelect: document.getElementById('article-select'),
+            timeBtns: document.querySelectorAll('.time-btn'),
+            statCpm: document.getElementById('stat-cpm'),
+            statAccuracy: document.getElementById('stat-accuracy'),
+            statTime: document.getElementById('stat-time'),
+            timerLabel: document.getElementById('timer-label'),
+            statProgress: document.getElementById('stat-progress'),
+            statCharCount: document.getElementById('stat-char-count'),
+            progressBar: document.getElementById('progress-bar'),
+            statusDot: document.getElementById('status-dot'),
+            statusText: document.getElementById('status-text'),
+            imeBadge: document.getElementById('ime-badge'),
+            compositionPreview: document.getElementById('composition-preview'),
+            textWrapper: document.getElementById('text-container-wrapper'),
+            textDisplay: document.getElementById('text-display'),
+            typingInput: document.getElementById('typing-input'),
+            blurOverlay: document.getElementById('blur-overlay'),
+            btnRestart: document.getElementById('btn-restart'),
+            btnTheme: document.getElementById('btn-theme'),
+            btnSound: document.getElementById('btn-sound'),
+            iconSoundOn: document.getElementById('icon-sound-on'),
+            iconSoundOff: document.getElementById('icon-sound-off'),
+            // Modals
+            modalCustom: document.getElementById('modal-custom'),
+            customTextInput: document.getElementById('custom-text-input'),
+            customErrorMsg: document.getElementById('custom-error-msg'),
+            modalResult: document.getElementById('modal-result'),
+            modalHistory: document.getElementById('modal-history'),
+            historyList: document.getElementById('history-list')
+        };
+
+        /**
+         * 初始化應用程式
+         */
+        function init() {
+            initTheme();
+            populateArticleSelect();
+            loadArticle();
+            bindEvents();
+        }
+
+        /**
+         * 主題切換初始化 (支援系統偏好與 localStorage)
+         */
+        function initTheme() {
+            const savedTheme = localStorage.getItem('typing_theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        /**
+         * 播放極簡機械鍵盤音效 (使用 Web Audio API，無需外部音檔)
+         */
+        function playKeySound(isError = false) {
+            if (!state.soundEnabled) return;
+            try {
+                if (!state.audioCtx) {
+                    state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (state.audioCtx.state === 'suspended') {
+                    state.audioCtx.resume();
+                }
+                const osc = state.audioCtx.createOscillator();
+                const gain = state.audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(state.audioCtx.destination);
+
+                const now = state.audioCtx.currentTime;
+                if (isError) {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.exponentialRampToValueAtTime(90, now + 0.08);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(520, now);
+                    osc.frequency.exponentialRampToValueAtTime(180, now + 0.035);
+                    gain.gain.setValueAtTime(0.06, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+                    osc.start(now);
+                    osc.stop(now + 0.035);
+                }
+            } catch (e) {
+                // 忽略音訊播放權限錯誤
+            }
+        }
+
+        /**
+         * 填充篇目下拉選單
+         */
+        function populateArticleSelect() {
+            els.articleSelect.innerHTML = '';
+            if (state.category === 'custom') {
+                const opt = document.createElement('option');
+                opt.value = '0';
+                opt.textContent = '自訂練習段落 (點擊編輯)';
+                els.articleSelect.appendChild(opt);
+                return;
+            }
+            const list = ARTICLE_DB[state.category] || [];
+            list.forEach((item, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = `${idx + 1}. ${item.title} (${item.text.length}字)`;
+                els.articleSelect.appendChild(opt);
+            });
+            els.articleSelect.value = state.articleIndex;
+        }
+
+        /**
+         * 載入目標文章並重置所有練習狀態
+         */
+        function loadArticle() {
+            stopTimer();
+            state.status = 'idle';
+            state.typedText = '';
+            state.isComposing = false;
+            state.startTime = null;
+            state.elapsedSeconds = 0;
+
+            if (state.category === 'custom') {
+                state.targetText = state.customText;
+            } else {
+                const list = ARTICLE_DB[state.category];
+                const article = list[state.articleIndex] || list[0];
+                state.targetText = article.text;
+            }
+
+            // 清空輸入框
+            els.typingInput.value = '';
+            els.compositionPreview.textContent = '（就緒）';
+            els.imeBadge.classList.add('hidden');
+
+            // 重置儀表板數據
+            els.statCpm.textContent = '0';
+            els.statAccuracy.textContent = '100';
+            els.statProgress.textContent = '0%';
+            els.statCharCount.textContent = `0 / ${state.targetText.length}`;
+            els.progressBar.style.width = '0%';
+
+            if (state.timeLimit > 0) {
+                els.timerLabel.textContent = '剩餘時間';
+                els.statTime.textContent = formatTime(state.timeLimit);
+            } else {
+                els.timerLabel.textContent = '經過時間';
+                els.statTime.textContent = '00:00';
+            }
+
+            // 更新狀態燈號
+            els.statusDot.className = 'w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600';
+            els.statusText.textContent = '點擊下方文字區並開始輸入任何字元以啟動計時';
+
+            renderCharacters();
+            focusInput();
+        }
+
+        /**
+         * 逐字渲染文章與狀態高亮
+         */
+        function renderCharacters() {
+            const targetChars = Array.from(state.targetText);
+            const typedChars = Array.from(state.typedText);
+            const fragment = document.createDocumentFragment();
+
+            targetChars.forEach((char, index) => {
+                const span = document.createElement('span');
+                span.textContent = char;
+                span.dataset.index = index;
+                // 基礎字元樣式
+                span.className = 'inline-block px-[1px] mx-[0.5px] rounded transition-colors duration-75 border-b-2 border-transparent';
+
+                if (index < typedChars.length) {
+                    // 已經輸入過的字元
+                    if (typedChars[index] === char) {
+                        // 輸入正確：綠色
+                        span.classList.add('text-emerald-600', 'dark:text-emerald-400');
+                    } else {
+                        // 輸入錯誤：紅色字 + 淺紅底色標記
+                        span.classList.add('text-rose-600', 'dark:text-rose-300', 'bg-rose-100', 'dark:bg-rose-900/60', 'border-rose-500');
+                    }
+                } else if (index === typedChars.length) {
+                    // 當前待輸入字元：明顯游標與底線高亮
+                    span.classList.add(
+                        'text-slate-900', 'dark:text-white',
+                        'bg-teal-500/15', 'dark:bg-teal-400/20',
+                        'border-teal-600', 'dark:border-teal-400',
+                        'caret-active'
+                    );
+                    span.id = 'active-char';
+                } else {
+                    // 尚未輸入字元：柔和灰色
+                    span.classList.add('text-slate-400', 'dark:text-slate-500');
+                }
+
+                fragment.appendChild(span);
+            });
+
+            els.textDisplay.innerHTML = '';
+            els.textDisplay.appendChild(fragment);
+            scrollToActiveChar();
+        }
+
+        /**
+         * 自動捲動視窗，確保當前正在輸入的那一行保持在視野中央
+         */
+        function scrollToActiveChar() {
+            const activeEl = document.getElementById('active-char');
+            if (!activeEl) return;
+
+            const container = els.textDisplay;
+            const containerHeight = container.clientHeight;
+            const charTop = activeEl.offsetTop;
+            const charHeight = activeEl.offsetHeight;
+
+            // 計算目標捲動位置，讓當前字元位於容器垂直中央偏上
+            const targetScrollTop = charTop - (containerHeight / 2) + (charHeight / 2);
+            container.scrollTo({
+                top: Math.max(0, targetScrollTop),
+                behavior: 'smooth'
+            });
+        }
+
+        /**
+         * 啟動計時器
+         */
+        function startTimer() {
+            if (state.status === 'running') return;
+            state.status = 'running';
+            state.startTime = Date.now();
+
+            els.statusDot.className = 'w-2 h-2 rounded-full bg-teal-500 animate-ping';
+            els.statusText.textContent = '練習進行中... 專注節奏與準確率';
+
+            state.timerInterval = setInterval(() => {
+                const now = Date.now();
+                state.elapsedSeconds = (now - state.startTime) / 1000;
+
+                if (state.timeLimit > 0) {
+                    const remaining = Math.max(0, Math.ceil(state.timeLimit - state.elapsedSeconds));
+                    els.statTime.textContent = formatTime(remaining);
+                    if (remaining <= 5 && remaining > 0) {
+                        els.statTime.classList.add('text-rose-500');
+                    } else {
+                        els.statTime.classList.remove('text-rose-500');
+                    }
+                    if (state.elapsedSeconds >= state.timeLimit) {
+                        finishPractice('時間到！');
+                    }
+                } else {
+                    els.statTime.textContent = formatTime(Math.floor(state.elapsedSeconds));
+                }
+
+                updateLiveStats();
+            }, 200);
+        }
+
+        /**
+         * 停止計時器
+         */
+        function stopTimer() {
+            if (state.timerInterval) {
+                clearInterval(state.timerInterval);
+                state.timerInterval = null;
+            }
+            els.statTime.classList.remove('text-rose-500');
+        }
+
+        /**
+         * 即時計算並更新 CPM (每分鐘字數)、正確率與進度條
+         */
+        function updateLiveStats() {
+            const targetChars = Array.from(state.targetText);
+            const typedChars = Array.from(state.typedText);
+            const totalTyped = typedChars.length;
+
+            // 計算正確字數
+            let correctCount = 0;
+            for (let i = 0; i < totalTyped; i++) {
+                if (typedChars[i] === targetChars[i]) {
+                    correctCount++;
+                }
+            }
+
+            // 1. 正確率計算：(正確字數 / 總輸入字數) * 100
+            const accuracy = totalTyped === 0 ? 100 : Math.round((correctCount / totalTyped) * 100);
+            els.statAccuracy.textContent = accuracy;
+
+            // 2. CPM (每分鐘正確字數) 計算
+            // 避免剛開始前 0.5 秒除以極小值導致數字暴衝
+            const elapsedMinutes = Math.max(state.elapsedSeconds, 0.5) / 60;
+            const cpm = state.status === 'idle' ? 0 : Math.round(correctCount / elapsedMinutes);
+            els.statCpm.textContent = cpm;
+
+            // 3. 進度條計算
+            const progressPercent = Math.min(100, Math.round((totalTyped / targetChars.length) * 100));
+            els.statProgress.textContent = `${progressPercent}%`;
+            els.statCharCount.textContent = `${totalTyped} / ${targetChars.length}`;
+            els.progressBar.style.width = `${progressPercent}%`;
+        }
+
+        /**
+         * 處理確認後的輸入內容比對與完成判定
+         */
+        function handleConfirmedInput() {
+            // 讀取 textarea 的值，並過濾掉意外的換行符號（除非目標文本有換行）
+            let rawVal = els.typingInput.value.replace(/\r?\n/g, '');
+            const targetChars = Array.from(state.targetText);
+            let typedChars = Array.from(rawVal);
+
+            // 限制最大輸入長度不超過文章總長度
+            if (typedChars.length > targetChars.length) {
+                typedChars = typedChars.slice(0, targetChars.length);
+                rawVal = typedChars.join('');
+                els.typingInput.value = rawVal;
+            }
+
+            // 判斷是否為新增字元以觸發音效
+            const prevLen = Array.from(state.typedText).length;
+            if (typedChars.length > prevLen) {
+                const lastIdx = typedChars.length - 1;
+                const isWrong = typedChars[lastIdx] !== targetChars[lastIdx];
+                playKeySound(isWrong);
+            } else if (typedChars.length < prevLen) {
+                playKeySound(false);
+            }
+
+            state.typedText = rawVal;
+            els.compositionPreview.textContent = '（就緒）';
+
+            // 若尚未開始計時且已有輸入，立刻啟動計時
+            if (state.status === 'idle' && typedChars.length > 0) {
+                startTimer();
+            }
+
+            renderCharacters();
+            updateLiveStats();
+
+            // 檢查是否已經打完整篇文章
+            if (typedChars.length >= targetChars.length && targetChars.length > 0) {
+                finishPractice('已完成整篇文章！');
+            }
+        }
+
+        /**
+         * 完成練習，顯示結算報告並儲存紀錄
+         */
+        function finishPractice(reasonTitle) {
+            if (state.status === 'finished') return;
+            state.status = 'finished';
+            stopTimer();
+
+            // 精確計算最終耗時
+            const finalSeconds = state.startTime 
+                ? Math.max(1, Math.round((Date.now() - state.startTime) / 1000)) 
+                : 1;
+            const effectiveSeconds = state.timeLimit > 0 
+                ? Math.min(state.timeLimit, finalSeconds) 
+                : finalSeconds;
+
+            const targetChars = Array.from(state.targetText);
+            const typedChars = Array.from(state.typedText);
+            const totalTyped = typedChars.length;
+
+            let correctCount = 0;
+            let errorCount = 0;
+            for (let i = 0; i < totalTyped; i++) {
+                if (typedChars[i] === targetChars[i]) {
+                    correctCount++;
+                } else {
+                    errorCount++;
+                }
+            }
+
+            const accuracy = totalTyped === 0 ? 0 : Math.round((correctCount / totalTyped) * 100);
+            const cpm = Math.round(correctCount / (effectiveSeconds / 60));
+
+            // 更新狀態列
+            els.statusDot.className = 'w-2 h-2 rounded-full bg-emerald-500';
+            els.statusText.textContent = `練習結束（${reasonTitle}）`;
+
+            // 填充結算報告視窗
+            document.getElementById('result-subtitle').textContent = `${reasonTitle} 以下是您本次的表現分析：`;
+            document.getElementById('res-cpm').textContent = cpm;
+            document.getElementById('res-acc').textContent = accuracy;
+            document.getElementById('res-total').textContent = `${totalTyped} 字`;
+            document.getElementById('res-errors').textContent = `${errorCount} 字`;
+            document.getElementById('res-time').textContent = `${effectiveSeconds} 秒`;
+
+            // 儲存至 localStorage 歷史紀錄
+            saveHistoryRecord({
+                date: new Date().toLocaleString('zh-TW', { hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+                title: getCurrentArticleTitle(),
+                cpm,
+                accuracy,
+                totalTyped,
+                errorCount,
+                duration: effectiveSeconds
+            });
+
+            // 顯示結算 Modal
+            els.modalResult.classList.remove('hidden');
+            els.typingInput.blur();
+        }
+
+        /**
+         * 取得當前篇目標題
+         */
+        function getCurrentArticleTitle() {
+            if (state.category === 'custom') return '自訂文章';
+            const list = ARTICLE_DB[state.category];
+            return (list && list[state.articleIndex]) ? list[state.articleIndex].title : '練習文章';
+        }
+
+        /**
+         * 儲存與讀取歷史紀錄 (localStorage)
+         */
+        function saveHistoryRecord(record) {
+            try {
+                const raw = localStorage.getItem('chinese_typing_history');
+                const history = raw ? JSON.parse(raw) : [];
+                history.unshift(record);
+                // 最多保留最近 20 筆紀錄
+                if (history.length > 20) history.length = 20;
+                localStorage.setItem('chinese_typing_history', JSON.stringify(history));
+            } catch (e) {
+                console.error('無法儲存紀錄', e);
+            }
+        }
+
+        function renderHistoryModal() {
+            try {
+                const raw = localStorage.getItem('chinese_typing_history');
+                const history = raw ? JSON.parse(raw) : [];
+
+                if (history.length === 0) {
+                    els.historyList.innerHTML = `
+                        <div class="text-center py-12 text-slate-400 dark:text-slate-500 text-sm">
+                            尚無任何練習紀錄，快去完成第一次打字練習吧！
+                        </div>
+                    `;
+                    return;
+                }
+
+                els.historyList.innerHTML = history.map((item, idx) => `
+                    <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-700/60">
+                        <div class="min-w-0 pr-3">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-mono text-slate-400">#${history.length - idx}</span>
+                                <span class="font-bold text-sm text-slate-800 dark:text-slate-100 truncate">${escapeHtml(item.title)}</span>
+                            </div>
+                            <div class="text-xs text-slate-400 mt-1">${item.date} • 輸入 ${item.totalTyped} 字 • 耗時 ${item.duration} 秒</div>
+                        </div>
+                        <div class="flex items-center gap-4 shrink-0">
+                            <div class="text-right">
+                                <div class="font-mono font-bold text-base text-teal-600 dark:text-teal-400">${item.cpm} <span class="text-[10px] font-sans font-normal text-slate-400">CPM</span></div>
+                                <div class="font-mono text-xs font-medium ${item.accuracy >= 95 ? 'text-emerald-500' : 'text-amber-500'}">正確率 ${item.accuracy}%</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                els.historyList.innerHTML = '<div class="text-center py-6 text-rose-500 text-sm">讀取紀錄發生錯誤</div>';
+            }
+        }
+
+        /**
+         * 工具函式：秒數格式化為 MM:SS
+         */
+        function formatTime(sec) {
+            const m = Math.floor(sec / 60).toString().padStart(2, '0');
+            const s = (sec % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function focusInput() {
+            if (state.status === 'finished') return;
+            els.typingInput.focus({ preventScroll: true });
+            els.blurOverlay.classList.add('hidden');
+        }
+
+        /**
+         * 綁定所有互動與 IME 輸入法事件
+         */
+        function bindEvents() {
+            // 1. 中文輸入法 (IME) 核心事件處理
+            els.typingInput.addEventListener('compositionstart', (e) => {
+                state.isComposing = true;
+                els.imeBadge.classList.remove('hidden');
+                // 若還沒開始計時，當使用者開始敲擊注音/倉頡鍵盤時就啟動計時
+                if (state.status === 'idle') {
+                    startTimer();
+                }
+            });
+
+            els.typingInput.addEventListener('compositionupdate', (e) => {
+                // 即時在底部預覽列顯示正在組字的注音符號或字根，不干擾上方文章比對
+                els.compositionPreview.textContent = e.data || '組字中...';
+            });
+
+            els.typingInput.addEventListener('compositionend', (e) => {
+                state.isComposing = false;
+                els.imeBadge.classList.add('hidden');
+                // 選字確認完成，立即執行比對！
+                handleConfirmedInput();
+            });
+
+            // 一般輸入事件 (包含英數字、標點符號、Backspace 刪除，以及部分瀏覽器在 compositionend 後觸發的 input)
+            els.typingInput.addEventListener('input', (e) => {
+                // 如果正在組字中，絕對不提前判定錯誤！
+                if (state.isComposing || e.isComposing) return;
+                handleConfirmedInput();
+            });
+
+            // 防止使用者用方向鍵移動隱藏 textarea 游標破壞對應位置
+            els.typingInput.addEventListener('keydown', (e) => {
+                if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
+                    e.preventDefault();
+                }
+                if (e.key === 'Escape') {
+                    loadArticle();
+                }
+            });
+
+            // 2. 視窗聚焦與失焦處理
+            els.textWrapper.addEventListener('click', () => {
+                focusInput();
+            });
+
+            els.typingInput.addEventListener('focus', () => {
+                els.blurOverlay.classList.add('hidden');
+            });
+
+            els.typingInput.addEventListener('blur', () => {
+                // 只有在非 Modal 開啟且練習未結束時顯示點擊恢復提示
+                const anyModalOpen = !els.modalCustom.classList.contains('hidden') || 
+                                     !els.modalResult.classList.contains('hidden') || 
+                                     !els.modalHistory.classList.contains('hidden');
+                if (!anyModalOpen && state.status !== 'finished') {
+                    els.blurOverlay.classList.remove('hidden');
+                }
+            });
+
+            // 3. 主題分類切換
+            els.categoryTabs.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const cat = btn.dataset.cat;
+                    if (cat === 'custom') {
+                        // 開啟自訂文章視窗
+                        els.customTextInput.value = state.customText;
+                        els.customErrorMsg.classList.add('hidden');
+                        els.modalCustom.classList.remove('hidden');
+                        els.customTextInput.focus();
+                        return;
+                    }
+
+                    state.category = cat;
+                    state.articleIndex = 0;
+                    updateCategoryTabUI(cat);
+                    populateArticleSelect();
+                    loadArticle();
+                });
+            });
+
+            // 篇目下拉選單切換
+            els.articleSelect.addEventListener('change', (e) => {
+                if (state.category === 'custom') {
+                    els.modalCustom.classList.remove('hidden');
+                    return;
+                }
+                state.articleIndex = parseInt(e.target.value, 10) || 0;
+                loadArticle();
+            });
+
+            // 4. 時間模式切換
+            els.timeBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    state.timeLimit = parseInt(btn.dataset.time, 10);
+                    els.timeBtns.forEach(b => {
+                        b.className = 'time-btn px-2.5 py-1 rounded-lg text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white';
+                    });
+                    btn.className = 'time-btn px-2.5 py-1 rounded-lg text-xs font-medium transition bg-white dark:bg-slate-700 text-teal-600 dark:text-teal-400 shadow-sm';
+                    loadArticle();
+                });
+            });
+
+            // 5. 自訂文章 Modal 控制
+            document.getElementById('confirm-custom-btn').addEventListener('click', () => {
+                // 清理多餘換行與空白
+                const cleaned = els.customTextInput.value.replace(/\s+/g, ' ').trim();
+                if (Array.from(cleaned).length < 5) {
+                    els.customErrorMsg.classList.remove('hidden');
+                    return;
+                }
+                state.customText = cleaned;
+                state.category = 'custom';
+                state.articleIndex = 0;
+                updateCategoryTabUI('custom');
+                populateArticleSelect();
+                els.modalCustom.classList.add('hidden');
+                loadArticle();
+            });
+
+            const closeCustom = () => {
+                els.modalCustom.classList.add('hidden');
+                focusInput();
+            };
+            document.getElementById('close-custom-modal').addEventListener('click', closeCustom);
+            document.getElementById('cancel-custom-btn').addEventListener('click', closeCustom);
+
+            // 6. 重新開始與結算按鈕
+            els.btnRestart.addEventListener('click', () => loadArticle());
+
+            document.getElementById('btn-res-retry').addEventListener('click', () => {
+                els.modalResult.classList.add('hidden');
+                loadArticle();
+            });
+
+            document.getElementById('btn-res-next').addEventListener('click', () => {
+                els.modalResult.classList.add('hidden');
+                if (state.category === 'custom') {
+                    // 自訂模式下「下一篇」切換回日常短句第一篇
+                    state.category = 'daily';
+                    state.articleIndex = 0;
+                    updateCategoryTabUI('daily');
+                    populateArticleSelect();
+                } else {
+                    const list = ARTICLE_DB[state.category];
+                    state.articleIndex = (state.articleIndex + 1) % list.length;
+                    els.articleSelect.value = state.articleIndex;
+                }
+                loadArticle();
+            });
+
+            // 7. 歷史紀錄 Modal 控制
+            document.getElementById('btn-history').addEventListener('click', () => {
+                renderHistoryModal();
+                els.modalHistory.classList.remove('hidden');
+            });
+
+            const closeHistory = () => {
+                els.modalHistory.classList.add('hidden');
+                focusInput();
+            };
+            document.getElementById('close-history-modal').addEventListener('click', closeHistory);
+            document.getElementById('btn-close-history-bottom').addEventListener('click', closeHistory);
+
+            document.getElementById('btn-clear-history').addEventListener('click', () => {
+                localStorage.removeItem('chinese_typing_history');
+                renderHistoryModal();
+            });
+
+            // 8. 頂部工具列：深色模式 & 音效開關
+            els.btnTheme.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.setItem('typing_theme', isDark ? 'dark' : 'light');
+            });
+
+            els.btnSound.addEventListener('click', () => {
+                state.soundEnabled = !state.soundEnabled;
+                if (state.soundEnabled) {
+                    els.iconSoundOn.classList.remove('hidden');
+                    els.iconSoundOff.classList.add('hidden');
+                    playKeySound(false);
+                } else {
+                    els.iconSoundOn.classList.add('hidden');
+                    els.iconSoundOff.classList.remove('hidden');
+                }
+                focusInput();
+            });
+        }
+
+        function updateCategoryTabUI(activeCat) {
+            els.categoryTabs.forEach(b => {
+                if (b.dataset.cat === activeCat) {
+                    b.className = 'cat-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition bg-white dark:bg-slate-700 text-teal-600 dark:text-teal-400 shadow-sm';
+                } else {
+                    b.className = 'cat-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white';
+                }
+            });
+        }
+
+        // 啟動應用程式
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
